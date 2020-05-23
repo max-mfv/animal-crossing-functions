@@ -1,29 +1,36 @@
 const functions = require('firebase-functions');
 const admin = require('firebase-admin');
 
-admin.initializeApp()
+admin.initializeApp();
 
-exports.helloWorld = functions.https.onRequest((request, response) => {
- response.send("Hello from Firebase!");
-});
+const express = require('express');
+const app = express();
 
-exports.getStreams = functions.https.onRequest((request, response) => {
-  admin.firestore().collection('streams').get()
-    .then(data => {
+app.get("/streams", (req, res) => {
+  admin
+    .firestore()
+    .collection('streams')
+    .get()
+    .then((data) => {
       let streams = [];
       data.forEach(doc => {
-        streams.push(doc.data());
+        streams.push({
+          id: doc.id,
+          body: doc.data().body,
+          userHandle: doc.data().userHandle,
+          createdAt: doc.data().createdAt
+        });
       });
-      return response.json(streams);
+      return res.json(streams);
     })
     .catch(err => console.error(err));
-});
+})
 
-exports.createStreams = functions.https.onRequest((request, response) => {
+app.post('/stream', (req, res) => {
   const newStream = {
-    body: request.body.body,
-    userHandle: request.body.userHandle,
-    createdAt: admin.firestore.Timestamp.fromDate(new Date())
+    body: req.body.body,
+    userHandle: req.body.userHandle,
+    createdAt: new Date().toISOString()
   }
 
   admin
@@ -31,10 +38,13 @@ exports.createStreams = functions.https.onRequest((request, response) => {
     .collection("streams")
     .add(newStream)
     .then((doc) => {
-      response.json({ message: `document ${doc.id} created.`})
+      res.json({ message: `document ${doc.id} created.`})
     })
     .catch((err) => {
-      response.status(500).json({ error: "something went wrong" });
+      res.status(500).json({ error: "something went wrong" });
       console.error(err);
     })
-});
+})
+
+// exports.api = functions.https.regioni('xxxx').onRequest(app);
+exports.api = functions.https.onRequest(app);
