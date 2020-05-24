@@ -15,3 +15,8 @@ firebase login
 ```
 firebase deploy
 ```
+
+- Run function locally:
+```
+firebase serve
+```
